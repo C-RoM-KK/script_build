@@ -27,7 +27,7 @@ jobs_sync=8
 jobs_build=16
 rom=C-RoM-KK
 rom_version=v7.1
-device_codename="grouper maguro tilapia m8 n7000 n7100 toro toroplus golden"
+device_codename="n7000 n7100 m8 toro toroplus tilapia golden"
 make_command="crom"
 
 # Reset all variables that might be set
@@ -104,7 +104,7 @@ done
 
 if [[ $help = 0 ]]; then                # skip the build if help is set
 
-# Initial build rom cycle
+# Initial build from cycle
 for i in $device_codename
 do
 
@@ -149,10 +149,10 @@ fi
 
 echo ''
 echo '##########'
-echo 'lunch $device_codename'
+echo 'lunch'
 echo '##########'
 echo ''
-lunch $rom_$device_codename-userdebug
+lunch crom_$i-userdebug
 
 if [[ $clean = 0 ]]; then               # make installclean only if "make clean" wasn't issued
         echo ''
@@ -179,7 +179,7 @@ time make -j$jobs_build $make_command   # build with the desired -j value
 # resetting ccache
 export USE_CCACHE=0
 
-zipname=$(ls out/target/product/$device_codename/$rom-$rom_version-*.zip | sed "s/out\/target\/product\/${device_codename}\///" )
+zipname=$(ls out/target/product/$i/$rom-$rom_version-*.zip | sed "s/out\/target\/product\/${i}\///" )
 if [[ $debug = 1 ]]; then
         echo '##########'
         echo 'zipname'
@@ -194,8 +194,8 @@ if [[ $release = 1 ]]; then             # upload the compiled build
         echo 'copy build on c-rom target dir'
         echo 'uploading build on c-rom'
         echo '##########'
-        cp ./out/target/product/$device_codename/$zipname.md5 $HOME/c-rom_output/$zipname.md5
-        cp ./out/target/product/$device_codename/$zipname $HOME/c-rom_output/$zipname
+        cp ./out/target/product/$i/$zipname.md5 $HOME/c-rom_output/$zipname.md5
+        cp ./out/target/product/$i/$zipname $HOME/c-rom_output/$zipname
         echo ''
 fi
 done
