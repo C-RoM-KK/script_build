@@ -11,25 +11,30 @@ Default behavior is to sync and make installclean.
 
     -h   | --help           display this help and exit
     -n   | --nosync         do not sync
-    -r   | --release        upload the build after compilation
+    -r   | --release        move the build after compilation
     -c   | --clean          make clean instead of installclean
-    -ncc | --no_ccache		build without ccache
+    -ncc | --no_ccache          build without ccache
     -d   | --debug          show some debug info
     -j #                    set a custom number of jobs to build
 
 EOL
 }
 
+# Create necessary dir
+mkdir -p $HOME/ccache/crom
+mkdir -p $HOME/c-rom_output
+
+
 # Configurable parameters
 ccache_dir=$HOME/ccache/crom
 ccache_log=$HOME/ccache/crom/ccache.log
-jobs_sync=6
-jobs_build=6
+jobs_sync=8
+jobs_build=16
 rom=C-RoM-KK
 rom_version=v7.1
-device_codename="falcon grouper maguro tilapia m8 n7000 n7100 toro toroplus golden"
+device_codename=""      # list of one or more devices separated by space
 make_command="crom"
- 
+
 # Reset all variables that might be set
 nosync=0
 noccache=0
@@ -60,7 +65,7 @@ do
             shift
             ;;
         -j)
-			shift
+                        shift
             jobs_build=$1
             shift
             ;;
@@ -73,22 +78,22 @@ do
             shift
             ;;
         --device)
-			shift
+                        shift
             device_codename=$1
             shift
-            ;; 
+            ;;
         --makecommand)
-			shift
+                        shift
             make_command=$1
             shift
-            ;; 
+            ;;
         --rom)
-			shift
+                        shift
             rom=$1
             shift
             ;;
         --romversion)
-			shift
+                        shift
             rom_version=$1
             shift
             ;;
@@ -98,18 +103,18 @@ do
             ;;
         *)  # no more options. Stop while loop
             break
-            ;;	
+            ;;
     esac
 done
 
-if [[ $help = 0 ]]; then		# skip the build if help is set
+if [[ $help = 0 ]]; then                # skip the build if help is set
 
-# Initial build rom cycle
+# Initial build from cycle
 for i in $device_codename
 do
 
 
-if [[ $noccache = 0 ]]; then		# use ccache by default
+if [[ $noccache = 0 ]]; then            # use ccache by default
 echo ''
 echo '##########'
 echo 'setting up ccache'
@@ -125,7 +130,7 @@ echo '##########'
 echo 'setup environment'
 echo '##########'
 echo ''
-. build/envsetup.sh					# set up the environment
+. build/envsetup.sh                                     # set up the environment
 
 echo ''
 echo '##########'
@@ -133,34 +138,34 @@ echo 'syncing up'
 echo '##########'
 echo ''
 if [[ $nosync = 1 ]]; then
-	echo 'skipping sync'
+        echo 'skipping sync'
 else
-	repo sync -j$jobs_sync -d
+        repo sync -j$jobs_sync -d
 fi
 
 if [[ $clean = 1 ]]; then
-	echo ''
-	echo '##########'
-	echo 'make clean'
-	echo '##########'
-	echo ''
-	make clean
+        echo ''
+        echo '##########'
+        echo 'make clean'
+        echo '##########'
+        echo ''
+        make clean
 fi
 
 echo ''
 echo '##########'
-echo 'lunch $device_codename'
+echo 'lunch'
 echo '##########'
 echo ''
-lunch $rom_$device_codename-userdebug
+lunch crom_$i-userdebug
 
-if [[ $clean = 0 ]]; then		# make installclean only if "make clean" wasn't issued
-	echo ''
-	echo '##########'
-	echo 'make installclean'
-	echo '##########'
-	echo ''
-	make installclean
+if [[ $clean = 0 ]]; then               # make installclean only if "make clean" wasn't issued
+        echo ''
+        echo '##########'
+        echo 'make installclean'
+        echo '##########'
+        echo ''
+        make installclean
 fi
 
 echo ''
@@ -170,32 +175,34 @@ echo '##########'
 echo ''
 
 if [[ $debug = 1 ]]; then
-	echo "Number of jobs: $jobs_build"
-	echo ''
+        echo "Number of jobs: $jobs_build"
+        echo ''
 fi
 
-time make -j$jobs_build $make_command	# build with the desired -j value
+time make -j$jobs_build $make_command   # build with the desired -j value
 
 # resetting ccache
 export USE_CCACHE=0
 
-zipname=$(ls out/target/product/$device_codename/$rom-$rom_version-*.zip | sed "s/out\/target\/product\/${device_codename}\///" )
+zipname=$(ls out/target/product/$i/$rom-$rom_version-*.zip | sed "s/out\/target\/product\/${i}\///" )
 if [[ $debug = 1 ]]; then
-	echo '##########'
-	echo 'zipname'
-	echo '##########'
-	echo ''
-	echo $zipname
+        echo '##########'
+        echo 'zipname'
+        echo '##########'
+        echo ''
+        echo $zipname
 fi
 
-if [[ $release = 1 ]]; then		# upload the compiled build
-	echo ''
-	echo '##########'
-	echo 'uploading build on c-rom'
-	echo '##########'
-	scp ./out/target/product/$device_codename/$zipname.md5 vocoderism@get.c-rom.org/var/www/$device_codename/$zipname.md5 	# upload via ssh to c-rom
-	scp ./out/target/product/$device_codename/$zipname vocoderism@get.c-rom.org/var/www/$device_codename/$zipname 	        # upload via ssh to c-rom
-	echo ''
+if [[ $release = 1 ]]; then             # upload the compiled build
+        echo ''
+        echo '##########'
+        echo 'copy build on c-rom target dir'
+        echo 'uploading build on c-rom'
+        echo '##########'
+        cp ./out/target/product/$i/$zipname.md5 $HOME/c-rom_output/$zipname.md5
+        cp ./out/target/product/$i/$zipname $HOME/c-rom_output/$zipname
+        echo ''
 fi
+rm -rf .repo/local_manifests/roomservice.xml
 done
 fi
