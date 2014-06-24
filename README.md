@@ -1,4 +1,4 @@
 script_build
 ============
 
-utility script to build all devices and push them on upload server if needed
+utility script to build a predefined list of supported devices and move them on temp dir to upload on server 
