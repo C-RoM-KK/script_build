@@ -197,7 +197,6 @@ if [[ $release = 1 ]]; then             # upload the compiled build
         echo ''
         echo '##########'
         echo 'copy build on c-rom target dir'
-        echo 'uploading build on c-rom'
         echo '##########'
         cp ./out/target/product/$i/$zipname.md5 $HOME/c-rom_output/$zipname.md5
         cp ./out/target/product/$i/$zipname $HOME/c-rom_output/$zipname
